@@ -1,0 +1,13 @@
+{
+  "project": "ChainGuard",
+  "scenario": "NORMAL_TRANSFER",
+  "chainId": 1337,
+  "tokenAddress": "0x681E80b26B8ceDDa33367e2E156903D7240ebdAe",
+  "transactionHash": "0x36a32e97ef88c334a2cdc5144188dccc5433dc1a8a0d7b9473d2983f6b839b67",
+  "blockNumber": 2,
+  "sender": "0xC132E290aA2f59855610ee1DaA45D9BB021FE5A0",
+  "recipient": "0x44035e176d8361567164eFa2b8Ff49afa2E7dc97",
+  "amount": "50",
+  "amountRaw": "50000000000000000000",
+  "receiptStatus": 1
+}

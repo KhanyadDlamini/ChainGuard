@@ -1,0 +1,34 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.py[cod]
+*.bak
+*.pre_idempotency.bak
+
+# Node.js
+node_modules/
+
+# Hardhat generated files
+contracts/artifacts/
+contracts/cache/
+
+# Build and coverage output
+dist/
+build/
+coverage/
+htmlcov/
+
+# macOS and IDE files
+.DS_Store
+.idea/
+.vscode/
+.ganache-data/

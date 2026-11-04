@@ -1,0 +1,15 @@
+{
+  "project": "ChainGuard",
+  "network": "ganache-local",
+  "chainId": 1337,
+  "contractName": "ChainGuardToken",
+  "tokenName": "ChainGuard Test Token",
+  "tokenSymbol": "CGT",
+  "decimals": 18,
+  "initialSupply": "1000000",
+  "contractAddress": "0x681E80b26B8ceDDa33367e2E156903D7240ebdAe",
+  "deployerAddress": "0xC132E290aA2f59855610ee1DaA45D9BB021FE5A0",
+  "deploymentTransactionHash": "0x4a0da817a84d52fe48f17e64b6282777c05ecb0716ea29047f6caae0398865c5",
+  "deploymentBlock": 1,
+  "recordedAtBlock": 1
+}

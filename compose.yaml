@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: chainguard-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: chainguard
+      POSTGRES_USER: chainguard_app
+      POSTGRES_PASSWORD: ${CHAINGUARD_DB_PASSWORD:?Set CHAINGUARD_DB_PASSWORD in .env}
+    ports:
+      - "127.0.0.1:5544:5432"
+    volumes:
+      - chainguard_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chainguard_app -d chainguard"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  chainguard_postgres_data:
