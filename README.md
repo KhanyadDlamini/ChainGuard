@@ -41,20 +41,28 @@ On-chain evidence (ERC-20 Transfer events, receipts) persisted per case
 
 ## Quickstart
 
-Prerequisites: Node 20+, Python 3.12 (via `uv`), Docker (or any Postgres 16),
-Ganache (`npm i -g ganache`).
+Prerequisites: Node 20+, Python 3.12 with `uv` ([install](https://docs.astral.sh/uv/)),
+Docker (or any Postgres 16), Ganache (`npm i -g ganache`).
 
 ```bash
+# 0. Environment files (repo root — do this first)
+cp .env.example .env
+cp backend/.env.example backend/.env
+# Edit .env: set CHAINGUARD_DB_PASSWORD to any local password.
+# Edit backend/.env: put the SAME password into DATABASE_URL,
+# replacing "change-me". (MODEL_API_KEY can wait — only AI needs it.)
+
 # 1. Database
 docker compose up -d postgres
 
 # 2. Local chain, persisted (new terminal, keep running)
 ganache --chain.chainId 1337 --server.port 8545 --database.dbPath .ganache-data
 
-# 3. Deploy token + seed a transfer
+# 3. Deploy token (new terminal)
 cd contracts && npm install
 npm run deploy:local
-npm run seed:transfer
+# Copy "contractAddress" from contracts/deployments/chainguard-local.json
+# into backend/.env as CHAINGUARD_TOKEN_ADDRESS.
 
 # 4. Backend (new terminal, from repo root)
 cd backend
@@ -79,10 +87,8 @@ Then open **http://127.0.0.1:3001** in a browser. The Connections page
 confirms all services are healthy. Interactive API docs live at
 **http://127.0.0.1:8000/docs**.
 
-Environment: copy the required keys into `backend/.env`
-(`DATABASE_URL`, `CHAINGUARD_TOKEN_ADDRESS` from the deploy output,
-`MODEL_API_KEY` for AI assessments) and set `CHAINGUARD_DB_PASSWORD` in the
-root `.env` for Docker Postgres.
+`MODEL_API_KEY` in `backend/.env` unlocks AI assessments; everything else
+works without it.
 
 ## Guided demo
 
