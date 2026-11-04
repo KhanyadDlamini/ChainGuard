@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from app.api.blockchain import router as blockchain_router
@@ -15,6 +16,18 @@ app = FastAPI(
     title="ChainGuard API",
     description="Evidence-driven blockchain reconciliation and investigation",
     version="0.1.0",
+)
+
+# Browser calls go direct to the API (no proxy), so allow the local UI
+# origins. Localhost-only demo service: no credentials, no wildcards.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://127.0.0.1:3001",
+        "http://localhost:3001",
+    ],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 

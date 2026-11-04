@@ -7,11 +7,13 @@
  * to expose because it points to a local FastAPI server.
  */
 
-// Server components: direct to backend. Browser: proxied via Next.js rewrites.
+// Server components: direct to backend. Browser: direct to backend too —
+// the Next.js rewrite proxy times out long AI calls, so the browser
+// bypasses it (the API allows the local UI origins via CORS).
 export const API_BASE =
   typeof window === "undefined"
     ? (process.env.API_ORIGIN ?? "http://127.0.0.1:8000")
-    : "";
+    : (process.env.NEXT_PUBLIC_API_ORIGIN ?? "http://127.0.0.1:8000");
 
 // ---------------------------------------------------------------------------
 // Core helper
@@ -213,6 +215,26 @@ export async function fetchPayment(id: string): Promise<Payment> {
   return apiFetch(`/api/v1/payments/${id}`);
 }
 
+export type PaymentCreate = {
+  external_reference: string;
+  chain_id: number;
+  asset_symbol: string;
+  token_address: string;
+  expected_amount: string;
+  expected_sender: string | null;
+  expected_recipient: string;
+  expected_tx_hash: string | null;
+};
+
+export async function createPayment(
+  payload: PaymentCreate
+): Promise<Payment> {
+  return apiFetch("/api/v1/payments", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Investigations / cases
 // ---------------------------------------------------------------------------
@@ -246,16 +268,137 @@ export async function fetchTransaction(txHash: string) {
 // Reconciliation actions (POST — used from client components)
 // ---------------------------------------------------------------------------
 
-export async function reconcilePayment(paymentId: string) {
+export type ReconcileResult = {
+  case_id: string;
+  payment_id: string;
+  external_reference: string;
+  result: string;
+  payment_status: string;
+  expected_amount: string;
+  observed_amount: string | null;
+  difference: string | null;
+  transaction_hash: string | null;
+  chain_id: number;
+  receipt_status: number | null;
+  transfer_event_count: number;
+  evidence_count: number;
+  summary: string | null;
+  replayed: boolean;
+};
+
+export async function reconcilePayment(
+  paymentId: string
+): Promise<ReconcileResult> {
   return apiFetch(`/api/v1/payments/${paymentId}/reconcile`, {
     method: "POST",
   });
 }
 
-export async function investigateCase(caseId: string) {
+export type InvestigationFinding = {
+  code: string;
+  severity: string;
+  message: string;
+  evidence_basis: string[];
+};
+
+export type DeterministicReport = {
+  investigation_id: string;
+  case_id: string;
+  report_type: string;
+  report: {
+    findings: InvestigationFinding[];
+    evidence: unknown[];
+    unknowns: string[];
+    limitations: string[];
+  };
+};
+
+export async function investigateCase(
+  caseId: string
+): Promise<DeterministicReport> {
   return apiFetch(`/api/v1/investigations/cases/${caseId}`, {
     method: "POST",
   });
+}
+
+export type AIHypothesis = {
+  title: string;
+  explanation: string;
+  supporting_evidence: string[];
+  contradicting_evidence: string[];
+  unresolved_questions: string[];
+  confidence: "LOW" | "MODERATE" | "HIGH";
+};
+
+export type AIAssessment = {
+  ai_investigation_id: string;
+  case_id: string;
+  deterministic_investigation_id: string;
+  provider: string;
+  model: string;
+  prompt_version: string;
+  created_at: string;
+  assessment: {
+    executive_summary: string;
+    hypotheses: AIHypothesis[];
+    key_observations: string[];
+    additional_evidence_needed: string[];
+    limitations: string[];
+  };
+};
+
+export async function analyzeCaseWithAI(
+  caseId: string
+): Promise<AIAssessment> {
+  return apiFetch(`/api/v1/investigations/cases/${caseId}/ai`, {
+    method: "POST",
+  });
+}
+
+export type DossierReport = {
+  investigation_id: string;
+  report_type: string;
+  created_at: string;
+  report: {
+    findings: InvestigationFinding[];
+    evidence: unknown[];
+    unknowns: string[];
+    limitations: string[];
+  };
+};
+
+export type DossierAIAssessment = {
+  ai_investigation_id: string;
+  deterministic_investigation_id: string;
+  provider: string;
+  model: string;
+  prompt_version: string;
+  created_at: string;
+  assessment: AIAssessment["assessment"];
+};
+
+export type DossierAuditEvent = {
+  event_id: string;
+  event_type: string;
+  actor: string;
+  created_at: string;
+  details: Record<string, unknown>;
+};
+
+export type CaseDossier = {
+  case: ReconciliationCase & { summary: string | null };
+  payment: Payment & { status: string };
+  evidence: EvidenceRecord[];
+  reports: DossierReport[];
+  ai_assessments: DossierAIAssessment[];
+  audit_events: DossierAuditEvent[];
+};
+
+export async function fetchCaseDossier(
+  caseId: string
+): Promise<CaseDossier> {
+  // Single-case dossier for the investigation detail page.
+  return apiFetch(`/api/v1/investigations/cases/${caseId}`);
 }
 
 // ---------------------------------------------------------------------------

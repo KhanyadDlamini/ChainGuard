@@ -440,5 +440,8 @@ def reconcile_payment(payment_id: UUID, db: Session = Depends(get_db)):
         logger.exception("Reconciliation failed for payment %s", payment_id)
         raise HTTPException(
             status_code=502,
-            detail=f"Reconciliation could not be completed: {type(exc).__name__}: {exc!r}",
+            detail=(
+                f"Reconciliation could not be completed for payment "
+                f"{payment_id}. See server logs for details."
+            ),
         ) from exc

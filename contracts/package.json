@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "compile": "hardhat compile",
-    "deploy:local": "hardhat run scripts/deploy.ts --network ganache"
+    "deploy:local": "hardhat run scripts/deploy.ts --network ganache",
+    "seed:transfer": "hardhat run scripts/transfer-test.ts --network ganache"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-ethers": "^4.0.0",

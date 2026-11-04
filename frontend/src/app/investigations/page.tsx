@@ -13,6 +13,7 @@ import { fetchShellData } from "@/lib/pageData";
 import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
 import ResultBadge from "@/components/ResultBadge";
+import CaseActions from "@/components/CaseActions";
 
 export const metadata = { title: "Investigations" };
 export const instant = false;
@@ -146,6 +147,7 @@ function CasesTable({
                 "Difference",
                 "Result",
                 "Created",
+                "Actions",
               ].map((h) => (
                 <th
                   key={h}
@@ -174,7 +176,12 @@ function CasesTable({
                   className="border-b border-[#f5f6f2] last:border-0 hover:bg-[#faf9f6]"
                 >
                   <td className="py-3.5 pr-4">
-                    <div className="font-medium">{c.external_reference}</div>
+                    <Link
+                      href={`/investigations/${c.case_id}`}
+                      className="font-medium hover:text-[#147d69] hover:underline"
+                    >
+                      {c.external_reference}
+                    </Link>
                     <div className="mt-0.5 font-mono text-[10px] text-[#858b85]">
                       {c.case_id.slice(0, 8)}…
                     </div>
@@ -198,8 +205,11 @@ function CasesTable({
                   <td className="py-3.5 pr-4">
                     <ResultBadge result={c.result} />
                   </td>
-                  <td className="py-3.5 text-xs text-[#858b85]">
+                  <td className="py-3.5 pr-4 text-xs text-[#858b85]">
                     {fmtDate(c.created_at)}
+                  </td>
+                  <td className="py-3.5">
+                    <CaseActions caseId={c.case_id} />
                   </td>
                 </tr>
               );

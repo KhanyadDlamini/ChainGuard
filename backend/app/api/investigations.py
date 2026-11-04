@@ -128,6 +128,143 @@ def decimal_text(value):
     return str(value) if value is not None else None
 
 
+@router.get("/cases/{case_id}")
+def get_case_dossier(case_id: UUID, db: Session = Depends(get_db)):
+    """Full investigation dossier for one case.
+
+    Returns the case, its payment, linked on-chain evidence, deterministic
+    reports (newest first), and AI assessments (newest first).
+    """
+    case = db.get(ReconciliationCase, case_id)
+    if case is None:
+        raise HTTPException(
+            status_code=404, detail="Reconciliation case not found"
+        )
+
+    payment = db.get(Payment, case.payment_id)
+    if payment is None:
+        raise HTTPException(
+            status_code=409, detail="Case has no associated payment"
+        )
+
+    evidence = db.scalars(
+        select(EvidenceRecord)
+        .join(
+            CaseEvidence,
+            CaseEvidence.evidence_id == EvidenceRecord.id,
+        )
+        .where(CaseEvidence.case_id == case.id)
+        .order_by(EvidenceRecord.block_number, EvidenceRecord.log_index)
+    ).all()
+
+    reports = db.scalars(
+        select(InvestigationReport)
+        .where(InvestigationReport.case_id == case.id)
+        .order_by(InvestigationReport.created_at.desc())
+    ).all()
+
+    ai_assessments = db.scalars(
+        select(AIInvestigation)
+        .join(
+            InvestigationReport,
+            InvestigationReport.id
+            == AIInvestigation.investigation_report_id,
+        )
+        .where(InvestigationReport.case_id == case.id)
+        .order_by(AIInvestigation.created_at.desc())
+    ).all()
+
+    audit_events = db.scalars(
+        select(AuditEvent)
+        .where(
+            AuditEvent.entity_type == "reconciliation_case",
+            AuditEvent.entity_id == str(case.id),
+        )
+        .order_by(AuditEvent.created_at)
+    ).all()
+
+    return {
+        "case": {
+            "case_id": str(case.id),
+            "payment_id": str(case.payment_id),
+            "external_reference": payment.external_reference,
+            "asset_symbol": payment.asset_symbol,
+            "status": case.status,
+            "result": case.result,
+            "expected_amount": decimal_text(case.expected_amount),
+            "observed_amount": decimal_text(case.observed_amount),
+            "difference": decimal_text(case.difference),
+            "summary": case.summary,
+            "created_at": case.created_at.isoformat(),
+            "resolved_at": (
+                case.resolved_at.isoformat() if case.resolved_at else None
+            ),
+        },
+        "payment": {
+            "payment_id": str(payment.id),
+            "external_reference": payment.external_reference,
+            "status": payment.status,
+            "asset_symbol": payment.asset_symbol,
+            "chain_id": payment.chain_id,
+            "token_address": payment.token_address,
+            "expected_amount": decimal_text(payment.expected_amount),
+            "expected_sender": payment.expected_sender,
+            "expected_recipient": payment.expected_recipient,
+            "expected_tx_hash": payment.expected_tx_hash,
+        },
+        "evidence": [
+            {
+                "evidence_id": str(item.id),
+                "transaction_hash": item.transaction_hash,
+                "chain_id": item.chain_id,
+                "block_number": item.block_number,
+                "receipt_status": item.receipt_status,
+                "token_address": item.token_address,
+                "sender_address": item.sender_address,
+                "recipient_address": item.recipient_address,
+                "amount_raw": str(item.amount_raw),
+                "log_index": item.log_index,
+                "source": item.source,
+                "recorded_at": item.recorded_at.isoformat(),
+            }
+            for item in evidence
+        ],
+        "reports": [
+            {
+                "investigation_id": str(item.id),
+                "report_type": item.report_type,
+                "created_at": item.created_at.isoformat(),
+                "report": item.report,
+            }
+            for item in reports
+        ],
+        "ai_assessments": [
+            {
+                "ai_investigation_id": str(item.id),
+                "deterministic_investigation_id": str(
+                    item.investigation_report_id
+                ),
+                "provider": item.provider,
+                "model": item.model_name,
+                "prompt_version": item.prompt_version,
+                "created_at": item.created_at.isoformat(),
+                "assessment": item.assessment,
+            }
+            for item in ai_assessments
+        ],
+        "audit_events": [
+            {
+                "event_id": str(item.id),
+                "event_type": item.event_type,
+                "actor": item.actor,
+                "created_at": item.created_at.isoformat(),
+                "details": item.details,
+            }
+            for item in audit_events
+        ],
+    }
+
+
 @router.post("/cases/{case_id}", status_code=201)
 def investigate_case(case_id: UUID, db: Session = Depends(get_db)):
     case = db.get(ReconciliationCase, case_id)

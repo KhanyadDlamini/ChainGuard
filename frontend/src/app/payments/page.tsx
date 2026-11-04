@@ -8,6 +8,8 @@ import { fetchShellData } from "@/lib/pageData";
 import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
 import ResultBadge from "@/components/ResultBadge";
+import CreatePaymentForm from "@/components/CreatePaymentForm";
+import ReconcileButton from "@/components/ReconcileButton";
 
 export const metadata = { title: "Payments" };
 export const instant = false;
@@ -58,8 +60,14 @@ function PaymentRow({ p }: { p: Payment }) {
       <td className="py-3.5 pr-4 text-sm text-[#858b85]">
         {p.chain_id}
       </td>
-      <td className="py-3.5">
+      <td className="py-3.5 pr-4">
         <ResultBadge result={p.status} />
+      </td>
+      <td className="py-3.5">
+        <ReconcileButton
+          paymentId={p.id}
+          hasTxHash={p.expected_tx_hash !== null}
+        />
       </td>
     </tr>
   );
@@ -106,7 +114,7 @@ function PaymentsTable({ payments, total, page, pageSize, status }: {
         <table className="w-full">
           <thead>
             <tr className="border-b border-[#eaece7]">
-              {["Reference / ID", "Expected amount", "Tx hash", "Chain", "Status"].map((h) => (
+              {["Reference / ID", "Expected amount", "Tx hash", "Chain", "Status", "Actions"].map((h) => (
                 <th key={h} className="pb-3 pr-4 text-left text-xs font-medium text-[#858b85] last:pr-0">
                   {h}
                 </th>
@@ -197,7 +205,11 @@ export default async function PaymentsPage({
             </div>
           </div>
 
-          <div className="mt-8 rounded-2xl border border-[#eaece7] bg-white p-6">
+          <div className="mt-8">
+            <CreatePaymentForm />
+          </div>
+
+          <div className="mt-5 rounded-2xl border border-[#eaece7] bg-white p-6">
             {/* Filter bar */}
             <div className="mb-6 flex flex-wrap items-center gap-2">
               {STATUS_FILTER_OPTIONS.map(({ value, label }) => (
